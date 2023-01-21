@@ -25,10 +25,10 @@
 
     <commons-csv.version>1.9.0</commons-csv.version>
     <javax-validation.version>2.0.1.Final</javax-validation.version>
-    <junit.version>5.9.0</junit.version>
+    <junit.version>5.9.2</junit.version>
     <kotlin.version>1.7.22</kotlin.version>
     <kotlin-mockito.version>2.2.0</kotlin-mockito.version>
-    <klint.version>0.48.0</klint.version>
+    <klint.version>0.48.1</klint.version>
     <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
     <selenium.version>4.7.2</selenium.version>
     <spring-mobile-device.version>2.0.0.M3</spring-mobile-device.version>
