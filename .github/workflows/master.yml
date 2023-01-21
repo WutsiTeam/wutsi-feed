@@ -1,0 +1,147 @@
+name: master
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: 11
+
+      - name: Build
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git pull
+          mvn -s settings.xml clean install
+
+      - name: Upload app bundle
+        uses: actions/upload-artifact@v3
+        with:
+          name: appbundle
+          path: target/*.jar
+
+
+  deploy-test:
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: 11
+      - name: Get artigact
+        uses: actions/download-artifact@v3
+        with:
+          name: appbundle
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+          heroku plugins:install @heroku-cli/plugin-java
+      - name: Deploy to Heroku
+        env:
+          API_KEY: ${{secrets.API_KEY_TEST}}
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_TEST }}
+          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY_TEST }}
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY_TEST }}
+          HEROKU_APP: wutsi-feed-test
+        run: |
+          heroku apps | grep ${HEROKU_APP} && echo 'app: ${HEROKU_APP} exists' ||  heroku apps:create ${HEROKU_APP}
+          heroku buildpacks:clear --app ${HEROKU_APP}
+          heroku buildpacks:add heroku/jvm --app ${HEROKU_APP}
+          heroku config:set --app ${HEROKU_APP} APP_PROFILE=test
+          heroku config:set --app ${HEROKU_APP} API_KEY=${API_KEY}
+          heroku config:set --app ${HEROKU_APP} AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+          heroku config:set --app ${HEROKU_APP} AWS_SECRET_KEY=${AWS_SECRET_KEY}
+          heroku addons -a ${HEROKU_APP} | grep papertrail && echo 'addon: papertrail exists' ||  heroku addons:create papertrail -a ${HEROKU_APP}
+          heroku addons -a ${HEROKU_APP} | grep memcachier && echo 'addon: memcachier exists' ||  heroku addons:create memcachier -a ${HEROKU_APP}
+          heroku deploy:jar wutsi-feed.jar --app ${HEROKU_APP}
+      - name: Health check
+        env:
+          HEROKU_APP: wutsi-feed-test
+        run: |
+          sleep 90
+          curl -sSf https://${HEROKU_APP}.herokuapp.com/actuator/health >> /dev/null
+      - name: Notification
+        uses: rtCamp/action-slack-notify@v2
+        if: always()
+        env:
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_TITLE: wutsi-feed-test
+          SLACK_MESSAGE: Heroku Deployment in TEST
+          MSG_MINIMAL: true
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs: [ deploy-test ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: 11
+      - name: Get artigact
+        uses: actions/download-artifact@v3
+        with:
+          name: appbundle
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+          heroku plugins:install @heroku-cli/plugin-java
+      - name: Deploy to Heroku
+        env:
+          API_KEY: ${{secrets.API_KEY_PROD}}
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_PROD }}
+          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY_PROD }}
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY_PROD }}
+          HEROKU_APP: wutsi-feed-prod
+        run: |
+          heroku apps | grep ${HEROKU_APP} && echo 'app: ${HEROKU_APP} exists' ||  heroku apps:create ${HEROKU_APP}
+          heroku buildpacks:clear --app ${HEROKU_APP}
+          heroku buildpacks:add heroku/jvm --app ${HEROKU_APP}
+          heroku config:set --app ${HEROKU_APP} APP_PROFILE=prod
+          heroku config:set --app ${HEROKU_APP} API_KEY=${API_KEY}
+          heroku config:set --app ${HEROKU_APP} AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+          heroku config:set --app ${HEROKU_APP} AWS_SECRET_KEY=${AWS_SECRET_KEY}
+          heroku addons -a ${HEROKU_APP} | grep papertrail && echo 'addon: papertrail exists' ||  heroku addons:create papertrail -a ${HEROKU_APP}
+          heroku addons -a ${HEROKU_APP} | grep memcachier && echo 'addon: memcachier exists' ||  heroku addons:create memcachier -a ${HEROKU_APP}
+          heroku deploy:jar wutsi-feed.jar --app ${HEROKU_APP}
+      - name: Health check
+        env:
+          HEROKU_APP: wutsi-feed-prod
+        run: |
+          sleep 90
+          curl -sSf https://${HEROKU_APP}.herokuapp.com/actuator/health >> /dev/null
+      - name: Notification
+        uses: rtCamp/action-slack-notify@v2
+        if: always()
+        env:
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_TITLE: wutsi-feed-prod
+          SLACK_MESSAGE: Heroku Deployment in PROD
+          MSG_MINIMAL: true
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [ deploy-test, deploy-prod ]
+    if: always()
+    steps:
+      - uses: geekyeggo/delete-artifact@v1
+        with:
+          name: appbundle

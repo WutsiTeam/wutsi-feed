@@ -1,0 +1,11 @@
+wutsi:
+  application:
+    asset-url: https://prod-wutsi.s3.amazonaws.com/static/wutsi-assets
+    webapp-url: https://www.wutsi.me
+  platform:
+    security:
+      api-key: "${API_KEY}"
+    storage:
+      type: aws
+      aws:
+        bucket: prod-wutsi-data

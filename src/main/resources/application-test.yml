@@ -1,0 +1,10 @@
+wutsi:
+  application:
+    asset-url: https://int-wutsi.s3.amazonaws.com/static/wutsi-assets
+  platform:
+    security:
+      api-key: "${API_KEY}"
+    storage:
+      type: aws
+      aws:
+        bucket: int-wutsi-data
