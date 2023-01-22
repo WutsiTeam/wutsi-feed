@@ -3,6 +3,7 @@ package com.wutsi.application.feed.facebook
 import com.wutsi.checkout.manager.dto.Business
 import com.wutsi.marketplace.manager.dto.Offer
 import com.wutsi.membership.manager.dto.Member
+import com.wutsi.regulation.Country
 import com.wutsi.regulation.RegulationEngine
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -15,7 +16,6 @@ class FbProductMapper(
 ) {
     fun map(offer: Offer, member: Member, business: Business): FbProduct {
         val country = regulationEngine.country(business.country)
-        val fmt = DecimalFormat("${country.numberFormat} ${country.currency}")
         val price = offer.price.referencePrice?.let { it } ?: offer.price.price
         val salesPrice = offer.price.referencePrice?.let { offer.price.price }
 
@@ -26,8 +26,8 @@ class FbProductMapper(
             availability = if (offer.product.outOfStock) "out of stock" else "in stock",
             condition = "new",
             link = "$webappUrl${offer.product.url}",
-            price = fmt.format(price),
-            salesPrice = salesPrice?.let { fmt.format(salesPrice) },
+            price = formatMoney(price, country),
+            salesPrice = salesPrice?.let { formatMoney(salesPrice, country) },
             brand = member.displayName,
             imageLink = offer.product.thumbnail?.url,
             additionalImageLink = offer.product.pictures
@@ -35,4 +35,7 @@ class FbProductMapper(
                 .map { it.url },
         )
     }
+
+    private fun formatMoney(amount: Long, country: Country): String =
+        DecimalFormat(country.numberFormat).format(amount) + " ${country.currency}"
 }
