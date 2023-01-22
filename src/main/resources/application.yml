@@ -52,6 +52,8 @@ wutsi:
       client-id: ${wutsi.application.name}
     storage:
       type: local
+      local:
+        directory: "${user.home}/wutsi/storage"
 logging:
   level:
     root: INFO

@@ -1,1 +1,1 @@
-web: java $JAVA_OPTS -Dserver.port=$PORT -jar wutsi-web.jar --spring.profiles.active=$APP_PROFILE
+web: java $JAVA_OPTS -Dserver.port=$PORT -jar wutsi-feed.jar --spring.profiles.active=$APP_PROFILE
