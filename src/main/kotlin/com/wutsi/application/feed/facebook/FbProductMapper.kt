@@ -15,7 +15,7 @@ class FbProductMapper(
 ) {
     fun map(offer: Offer, member: Member, business: Business): FbProduct {
         val country = regulationEngine.country(business.country)
-        val fmt = DecimalFormat(country.monetaryFormat)
+        val fmt = DecimalFormat("${country.numberFormat} ${country.currency}")
         val price = offer.price.referencePrice?.let { it } ?: offer.price.price
         val salesPrice = offer.price.referencePrice?.let { offer.price.price }
 

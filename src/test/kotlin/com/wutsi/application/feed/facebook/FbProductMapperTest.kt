@@ -48,7 +48,7 @@ internal class FbProductMapperTest {
         assertEquals("in stock", fb.availability)
         assertEquals("new", fb.condition)
         assertEquals(offer.product.description, fb.description)
-        assertEquals("10,000 FCFA", fb.price)
+        assertEquals("10,000 XAF", fb.price)
         assertNull(fb.salesPrice)
         assertEquals("$webappUrl${offer.product.url}", fb.link)
         assertEquals(offer.product.thumbnail?.url, fb.imageLink)
@@ -65,8 +65,8 @@ internal class FbProductMapperTest {
             business,
         )
 
-        assertEquals("10,000 FCFA", fb.price)
-        assertEquals("9,000 FCFA", fb.salesPrice)
+        assertEquals("10,000 XAF", fb.price)
+        assertEquals("9,000 XAF", fb.salesPrice)
     }
 
     @Test
