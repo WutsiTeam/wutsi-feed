@@ -33,7 +33,7 @@
     <selenium.version>4.7.2</selenium.version>
     <spring-mobile-device.version>2.0.0.M3</spring-mobile-device.version>
 
-    <wutsi-platform-core.version>0.0.204</wutsi-platform-core.version>
+    <wutsi-platform-core.version>0.0.206</wutsi-platform-core.version>
     <wutsi-enums.version>1.0.26</wutsi-enums.version>
     <wutsi-events.version>1.0.18</wutsi-events.version>
     <wutsi-errors.version>1.0.14</wutsi-errors.version>
