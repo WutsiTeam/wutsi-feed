@@ -33,6 +33,7 @@ class FbProductMapper(
             additionalImageLink = offer.product.pictures
                 .filter { it.url != offer.product.thumbnail?.url }
                 .map { it.url },
+            googleProductCategory = offer.product.category?.id,
         )
     }
 

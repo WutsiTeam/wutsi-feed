@@ -151,6 +151,11 @@ object Fixtures {
         files = files,
         outOfStock = quantity <= 0,
         url = url,
+        category = com.wutsi.marketplace.manager.dto.CategorySummary(
+            id = 12343,
+            title = "Foo",
+            longTitle = "Foo > Bar",
+        ),
     )
 
     fun createPictureSummary(

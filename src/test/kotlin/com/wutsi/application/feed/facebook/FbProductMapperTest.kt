@@ -53,7 +53,7 @@ internal class FbProductMapperTest {
         assertEquals("$webappUrl${offer.product.url}", fb.link)
         assertEquals(offer.product.thumbnail?.url, fb.imageLink)
         assertEquals(listOf("https://www.img/com/2.png", "https://www.img/com/3.png"), fb.additionalImageLink)
-        assertNull(fb.googleProductCategory)
+        assertEquals(offer.product.category?.id, fb.googleProductCategory)
         assertEquals(member.displayName, fb.brand)
     }
 
