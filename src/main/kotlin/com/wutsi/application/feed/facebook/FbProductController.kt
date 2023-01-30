@@ -3,6 +3,7 @@ package com.wutsi.application.feed.facebook
 import com.wutsi.checkout.manager.CheckoutManagerApi
 import com.wutsi.checkout.manager.dto.Business
 import com.wutsi.enums.BusinessStatus
+import com.wutsi.enums.ProductType
 import com.wutsi.marketplace.manager.MarketplaceManagerApi
 import com.wutsi.marketplace.manager.dto.Offer
 import com.wutsi.marketplace.manager.dto.SearchOfferRequest
@@ -116,6 +117,7 @@ class FbProductController(
                 limit = regulationEngine.maxProducts(),
             ),
         ).offers
+            .filter { it.product.type == ProductType.PHYSICAL_PRODUCT.name }
             .mapNotNull { getOffer(it.product.id) }
 
     private fun getOffer(id: Long): Offer? =
