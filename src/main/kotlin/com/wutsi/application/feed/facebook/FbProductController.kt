@@ -114,11 +114,10 @@ class FbProductController(
         marketplaceManagerApi.searchOffer(
             request = SearchOfferRequest(
                 storeId = member.storeId,
+                types = listOf(ProductType.PHYSICAL_PRODUCT.name),
                 limit = regulationEngine.maxProducts(),
             ),
-        ).offers
-            .filter { it.product.type == ProductType.PHYSICAL_PRODUCT.name }
-            .mapNotNull { getOffer(it.product.id) }
+        ).offers.mapNotNull { getOffer(it.product.id) }
 
     private fun getOffer(id: Long): Offer? =
         try {
