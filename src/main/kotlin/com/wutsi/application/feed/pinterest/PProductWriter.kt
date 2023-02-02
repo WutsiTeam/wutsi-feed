@@ -1,6 +1,7 @@
-package com.wutsi.application.feed.model
+package com.wutsi.application.feed.pinterest
 
 import com.opencsv.CSVWriter
+import com.wutsi.application.feed.model.ProductModel
 import com.wutsi.application.feed.service.AbstractProductWriter
 import org.springframework.stereotype.Service
 
@@ -42,7 +43,7 @@ class PProductWriter : AbstractProductWriter() {
                 item.googleProductCategory?.toString(),
                 item.link,
                 item.imageLink,
-                item.additionalImageLink.joinToString(separator = "|"),
+                item.additionalImageLink.joinToString(separator = ","),
             ),
         )
     }

@@ -1,4 +1,4 @@
-package com.wutsi.application.feed
+package com.wutsi.application.feed.service
 
 import com.wutsi.marketplace.manager.dto.Product
 import java.io.OutputStream

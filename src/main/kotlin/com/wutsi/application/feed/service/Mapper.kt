@@ -1,9 +1,9 @@
-package com.wutsi.application.feed.facebook
+package com.wutsi.application.feed.service
 
-import com.wutsi.application.feed.FbProduct
-import com.wutsi.checkout.manager.dto.Business
+import com.wutsi.application.feed.model.ProductModel
 import com.wutsi.marketplace.manager.dto.Offer
 import com.wutsi.membership.manager.dto.Member
+import com.wutsi.membership.manager.dto.MemberSummary
 import com.wutsi.regulation.Country
 import com.wutsi.regulation.RegulationEngine
 import org.springframework.beans.factory.annotation.Value
@@ -11,16 +11,25 @@ import org.springframework.stereotype.Service
 import java.text.DecimalFormat
 
 @Service
-class FbProductMapper(
+class Mapper(
     private val regulationEngine: RegulationEngine,
     @Value("\${wutsi.application.webapp-url}") private val webappUrl: String,
 ) {
-    fun map(offer: Offer, member: Member, business: Business): FbProduct {
-        val country = regulationEngine.country(business.country)
+    fun map(offer: Offer, member: Member): ProductModel {
+        val country = regulationEngine.country(member.country)
+        return map(offer, member.displayName, country)
+    }
+
+    fun map(offer: Offer, member: MemberSummary): ProductModel {
+        val country = regulationEngine.country(member.country)
+        return map(offer, member.displayName, country)
+    }
+
+    fun map(offer: Offer, brand: String, country: Country): ProductModel {
         val price = offer.price.referencePrice?.let { it } ?: offer.price.price
         val salesPrice = offer.price.referencePrice?.let { offer.price.price }
 
-        return FbProduct(
+        return ProductModel(
             id = offer.product.id.toString(),
             title = offer.product.title,
             description = if (offer.product.description.isNullOrEmpty()) offer.product.summary else offer.product.description,
@@ -29,7 +38,7 @@ class FbProductMapper(
             link = "$webappUrl${offer.product.url}",
             price = formatMoney(price, country),
             salePrice = salesPrice?.let { formatMoney(salesPrice, country) },
-            brand = member.displayName,
+            brand = brand,
             imageLink = offer.product.thumbnail?.url,
             additionalImageLink = offer.product.pictures
                 .filter { it.url != offer.product.thumbnail?.url }

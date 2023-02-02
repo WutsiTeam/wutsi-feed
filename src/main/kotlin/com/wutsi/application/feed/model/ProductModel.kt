@@ -1,6 +1,6 @@
-package com.wutsi.application.feed
+package com.wutsi.application.feed.model
 
-data class FbProduct(
+data class ProductModel(
     val id: String = "",
     val title: String = "",
     val description: String? = null,

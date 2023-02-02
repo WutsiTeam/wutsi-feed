@@ -1,6 +1,9 @@
-package com.wutsi.application.feed.facebook
+package com.wutsi.application.feed.service
 
 import com.wutsi.application.feed.Fixtures
+import com.wutsi.regulation.Country
+import com.wutsi.regulation.RegulationEngine
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -9,15 +12,18 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-internal class FbProductMapperTest {
+internal class MapperTest {
     @Autowired
-    private lateinit var mapper: FbProductMapper
+    private lateinit var mapper: Mapper
+
+    @Autowired
+    private lateinit var regulationEngine: RegulationEngine
 
     @Value("\${wutsi.application.webapp-url}")
     private lateinit var webappUrl: String
 
     private val member = Fixtures.createMember()
-    private val business = Fixtures.createBusiness(country = "CM", currency = "XAF")
+
     private val offer = Fixtures.createOffer(
         product = Fixtures.createProduct(
             id = 11L,
@@ -40,9 +46,16 @@ internal class FbProductMapperTest {
         ),
     )
 
+    private lateinit var country: Country
+
+    @BeforeEach
+    fun setUp() {
+        country = regulationEngine.country("CM")
+    }
+
     @Test
     fun product() {
-        val fb = mapper.map(offer, member, business)
+        val fb = mapper.map(offer, member.displayName, country)
 
         assertEquals(offer.product.title, fb.title)
         assertEquals("in stock", fb.availability)
@@ -61,8 +74,8 @@ internal class FbProductMapperTest {
     fun savings() {
         val fb = mapper.map(
             offer.copy(price = offer.price.copy(referencePrice = 10000L, price = 9000L)),
-            member,
-            business,
+            member.displayName,
+            country,
         )
 
         assertEquals("10,000 XAF", fb.price)
@@ -73,8 +86,8 @@ internal class FbProductMapperTest {
     fun outOfStock() {
         val fb = mapper.map(
             offer.copy(product = offer.product.copy(quantity = 0, outOfStock = true)),
-            member,
-            business,
+            member.displayName,
+            country,
         )
 
         assertEquals("out of stock", fb.availability)
@@ -84,8 +97,8 @@ internal class FbProductMapperTest {
     fun nullDescription() {
         val fb = mapper.map(
             offer.copy(product = offer.product.copy(description = null)),
-            member,
-            business,
+            member.displayName,
+            country,
         )
 
         assertEquals(offer.product.summary, fb.description)
@@ -95,8 +108,8 @@ internal class FbProductMapperTest {
     fun emptyDescription() {
         val fb = mapper.map(
             offer.copy(product = offer.product.copy(description = "")),
-            member,
-            business,
+            member.displayName,
+            country,
         )
 
         assertEquals(offer.product.summary, fb.description)

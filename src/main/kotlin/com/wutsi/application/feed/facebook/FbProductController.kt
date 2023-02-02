@@ -1,18 +1,13 @@
 package com.wutsi.application.feed.facebook
 
+import com.wutsi.application.feed.service.Mapper
 import com.wutsi.checkout.manager.CheckoutManagerApi
-import com.wutsi.checkout.manager.dto.Business
 import com.wutsi.enums.BusinessStatus
-import com.wutsi.enums.ProductType
 import com.wutsi.marketplace.manager.MarketplaceManagerApi
-import com.wutsi.marketplace.manager.dto.Offer
-import com.wutsi.marketplace.manager.dto.SearchOfferRequest
 import com.wutsi.membership.manager.MembershipManagerApi
 import com.wutsi.membership.manager.dto.Member
 import com.wutsi.platform.core.logging.KVLogger
 import com.wutsi.platform.core.storage.StorageService
-import com.wutsi.regulation.RegulationEngine
-import org.slf4j.LoggerFactory
 import org.springframework.util.FileCopyUtils
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -32,17 +27,13 @@ class FbProductController(
     private val membershipManagerApi: MembershipManagerApi,
     private val marketplaceManagerApi: MarketplaceManagerApi,
     private val checkoutManagerApi: CheckoutManagerApi,
-    private val regulationEngine: RegulationEngine,
-    private val mapper: FbProductMapper,
+    private val offerLoader: FBOfferLoader,
+    private val mapper: Mapper,
     private val writer: FbProductWriter,
     private val response: HttpServletResponse,
     private val logger: KVLogger,
     private val storage: StorageService,
 ) {
-    companion object {
-        private val LOGGER = LoggerFactory.getLogger(FbProductController::class.java)
-    }
-
     @GetMapping("/{id}/product.csv", produces = ["application/csv"])
     fun product(@PathVariable id: Long) {
         // Get member
@@ -69,21 +60,21 @@ class FbProductController(
         }
 
         // Generate
-        generate(member, business)
+        generate(member)
     }
 
-    private fun generate(member: Member, business: Business) {
+    private fun generate(member: Member) {
         val now = LocalDate.now()
         val path = getPath(member.id, now)
         try {
             storage.get(storage.toURL(path), response.outputStream)
         } catch (ex: IOException) {
-            generate(member, business, path)
+            generate(member, path)
         }
     }
 
-    private fun generate(member: Member, business: Business, path: String) {
-        val offers = getOffers(member).map { mapper.map(it, member, business) }
+    private fun generate(member: Member, path: String) {
+        val offers = offerLoader.load(member).map { mapper.map(it, member) }
         val file = Files.createTempFile("facebook-product", "csv").toFile()
         logger.add("file", file)
         try {
@@ -109,23 +100,6 @@ class FbProductController(
             file.delete()
         }
     }
-
-    private fun getOffers(member: Member): List<Offer> =
-        marketplaceManagerApi.searchOffer(
-            request = SearchOfferRequest(
-                storeId = member.storeId,
-                types = listOf(ProductType.PHYSICAL_PRODUCT.name),
-                limit = regulationEngine.maxProducts(),
-            ),
-        ).offers.mapNotNull { getOffer(it.product.id) }
-
-    private fun getOffer(id: Long): Offer? =
-        try {
-            marketplaceManagerApi.getOffer(id).offer
-        } catch (ex: Exception) {
-            LOGGER.warn("Unable to get offer: $id", ex)
-            null
-        }
 
     private fun nothing() {
         writer.write(emptyList(), response.outputStream)

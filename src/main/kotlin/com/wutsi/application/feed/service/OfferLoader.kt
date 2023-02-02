@@ -1,8 +1,9 @@
-package com.wutsi.application.feed
+package com.wutsi.application.feed.service
 
-import com.wutsi.marketplace.manager.dto.Product
-import java.io.OutputStream
+import com.wutsi.marketplace.manager.dto.Offer
+import com.wutsi.membership.manager.dto.Member
 
-interface ProductWriter {
-    fun write(items: List<Product>, out: OutputStream)
+interface OfferLoader {
+    fun load(): List<Offer>
+    fun load(merchant: Member): List<Offer>
 }

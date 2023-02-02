@@ -1,17 +1,14 @@
-package com.wutsi.application.feed.facebook
+package com.wutsi.application.feed.model
 
+import com.wutsi.application.feed.facebook.FbProductWriter
+import com.wutsi.application.feed.pinterest.POfferLoader
 import com.wutsi.application.feed.service.Mapper
-import com.wutsi.checkout.manager.CheckoutManagerApi
-import com.wutsi.checkout.manager.dto.Business
-import com.wutsi.enums.BusinessStatus
-import com.wutsi.marketplace.manager.MarketplaceManagerApi
 import com.wutsi.membership.manager.MembershipManagerApi
 import com.wutsi.membership.manager.dto.Member
 import com.wutsi.platform.core.logging.KVLogger
 import com.wutsi.platform.core.storage.StorageService
 import org.springframework.util.FileCopyUtils
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.io.FileInputStream
@@ -23,60 +20,35 @@ import java.time.format.DateTimeFormatter
 import javax.servlet.http.HttpServletResponse
 
 @RestController
-@RequestMapping("/facebook")
-class FbProductController(
+@RequestMapping("/pinterest")
+class PProductController(
+    private val offerLoader: POfferLoader,
     private val membershipManagerApi: MembershipManagerApi,
-    private val marketplaceManagerApi: MarketplaceManagerApi,
-    private val checkoutManagerApi: CheckoutManagerApi,
-    private val offerLoader: FBOfferLoader,
     private val mapper: Mapper,
     private val writer: FbProductWriter,
     private val response: HttpServletResponse,
     private val logger: KVLogger,
     private val storage: StorageService,
 ) {
-    @GetMapping("/{id}/product.csv", produces = ["application/csv"])
-    fun product(@PathVariable id: Long) {
-        // Get member
-        val member = membershipManagerApi.getMember(id).member
-        logger.add("business_id", member.businessId)
-        logger.add("store_id", member.storeId)
-        if (!member.business || member.businessId == null || member.storeId == null) {
-            logger.add("business", false)
-            return nothing()
-        }
-
-        // Get business
-        val business = checkoutManagerApi.getBusiness(member.businessId!!).business
-        logger.add("business_status", business.status)
-        if (business.status != BusinessStatus.ACTIVE.name) {
-            return nothing()
-        }
-
-        // Get Store
-        val store = marketplaceManagerApi.getStore(member.storeId!!).store
-        logger.add("store_status", store.status)
-        if (store.status != BusinessStatus.ACTIVE.name) {
-            return nothing()
-        }
-
-        // Generate
-        generate(member, business)
-    }
-
-    private fun generate(member: Member, business: Business) {
+    @GetMapping("/product.csv", produces = ["application/csv"])
+    fun product() {
         val now = LocalDate.now()
-        val path = getPath(member.id, now)
+        val path = getPath(now)
         try {
             storage.get(storage.toURL(path), response.outputStream)
         } catch (ex: IOException) {
-            generate(member, business, path)
+            generate(path)
         }
     }
 
-    private fun generate(member: Member, business: Business, path: String) {
-        val offers = offerLoader.load(member).map { mapper.map(it, member, business) }
-        val file = Files.createTempFile("facebook-product", "csv").toFile()
+    private fun generate(path: String) {
+        val members = mutableMapOf<Long, Member>()
+        val offers = offerLoader.load().map {
+            val member = getMember(it.product.store.accountId, members)
+            mapper.map(it, member)
+        }
+
+        val file = Files.createTempFile("pinterest-product", "csv").toFile()
         logger.add("file", file)
         try {
             // Store locally
@@ -102,10 +74,17 @@ class FbProductController(
         }
     }
 
-    private fun nothing() {
-        writer.write(emptyList(), response.outputStream)
+    private fun getMember(id: Long, members: MutableMap<Long, Member>): Member {
+        var member = members[id]
+        if (member == null) {
+            val tmp = membershipManagerApi.getMember(id).member
+            members[id] = tmp
+            return tmp
+        } else {
+            return member
+        }
     }
 
-    private fun getPath(id: Long, date: LocalDate): String =
-        "feed/" + date.format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/facebook/$id/product.csv"
+    private fun getPath(date: LocalDate): String =
+        "feed/" + date.format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/pinterest/product.csv"
 }

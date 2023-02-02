@@ -1,14 +1,12 @@
-package com.wutsi.application.feed.facebook
+package com.wutsi.application.feed.service
 
 import com.opencsv.CSVWriter
-import com.wutsi.application.feed.FbProduct
-import org.springframework.stereotype.Service
+import com.wutsi.application.feed.model.ProductModel
 import java.io.OutputStream
 import java.io.OutputStreamWriter
 
-@Service
-class FbProductWriter {
-    fun write(items: List<FbProduct>, out: OutputStream) {
+abstract class AbstractProductWriter {
+    fun write(items: List<ProductModel>, out: OutputStream) {
         val writer = OutputStreamWriter(out)
         val csv = CSVWriter(
             writer,
@@ -19,52 +17,12 @@ class FbProductWriter {
         )
         csv.use {
             headers(csv)
-            data(items, csv)
+            items.forEach {
+                data(it, csv)
+            }
         }
     }
 
-    /**
-     * See https://developers.facebook.com/docs/marketing-api/catalog/reference/
-     */
-    private fun headers(csv: CSVWriter) {
-        csv.writeNext(
-            arrayOf(
-                "id",
-                "title",
-                "description",
-                "availability",
-                "condition",
-                "price",
-                "sale_price",
-                "brand",
-                "google_product_category",
-                "link",
-                "image_link",
-                "additional_image_link",
-            ),
-        )
-    }
-
-    private fun data(items: List<FbProduct>, csv: CSVWriter) {
-        items.forEach { data(it, csv) }
-    }
-
-    private fun data(item: FbProduct, csv: CSVWriter) {
-        csv.writeNext(
-            arrayOf(
-                item.id,
-                item.title,
-                item.description,
-                item.availability,
-                item.condition,
-                item.price,
-                item.salePrice,
-                item.brand,
-                item.googleProductCategory?.toString(),
-                item.link,
-                item.imageLink,
-                item.additionalImageLink.joinToString(separator = "|"),
-            ),
-        )
-    }
+    protected abstract fun headers(csv: CSVWriter)
+    protected abstract fun data(item: ProductModel, csv: CSVWriter)
 }

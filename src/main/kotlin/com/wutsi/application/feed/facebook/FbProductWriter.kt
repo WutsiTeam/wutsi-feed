@@ -1,31 +1,16 @@
 package com.wutsi.application.feed.facebook
 
 import com.opencsv.CSVWriter
+import com.wutsi.application.feed.model.ProductModel
+import com.wutsi.application.feed.service.AbstractProductWriter
 import org.springframework.stereotype.Service
-import java.io.OutputStream
-import java.io.OutputStreamWriter
 
+/**
+ * See https://developers.facebook.com/docs/marketing-api/catalog/reference/
+ */
 @Service
-class FbProductWriter {
-    fun write(items: List<FbProduct>, out: OutputStream) {
-        val writer = OutputStreamWriter(out)
-        val csv = CSVWriter(
-            writer,
-            CSVWriter.DEFAULT_SEPARATOR,
-            CSVWriter.DEFAULT_QUOTE_CHARACTER,
-            CSVWriter.DEFAULT_ESCAPE_CHARACTER,
-            CSVWriter.DEFAULT_LINE_END,
-        )
-        csv.use {
-            headers(csv)
-            data(items, csv)
-        }
-    }
-
-    /**
-     * See https://developers.facebook.com/docs/marketing-api/catalog/reference/
-     */
-    private fun headers(csv: CSVWriter) {
+class FbProductWriter : AbstractProductWriter() {
+    override fun headers(csv: CSVWriter) {
         csv.writeNext(
             arrayOf(
                 "id",
@@ -44,11 +29,7 @@ class FbProductWriter {
         )
     }
 
-    private fun data(items: List<FbProduct>, csv: CSVWriter) {
-        items.forEach { data(it, csv) }
-    }
-
-    private fun data(item: FbProduct, csv: CSVWriter) {
+    override fun data(item: ProductModel, csv: CSVWriter) {
         csv.writeNext(
             arrayOf(
                 item.id,
@@ -57,7 +38,7 @@ class FbProductWriter {
                 item.availability,
                 item.condition,
                 item.price,
-                item.salesPrice,
+                item.salePrice,
                 item.brand,
                 item.googleProductCategory?.toString(),
                 item.link,
