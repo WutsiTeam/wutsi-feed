@@ -1,4 +1,4 @@
-package com.wutsi.application.feed.facebook
+package com.wutsi.application.feed
 
 data class FbProduct(
     val id: String = "",
@@ -7,7 +7,7 @@ data class FbProduct(
     val availability: String = "",
     val condition: String = "",
     val price: String = "",
-    val salesPrice: String? = null,
+    val salePrice: String? = null,
     val link: String = "",
     val imageLink: String? = null,
     val brand: String? = null,

@@ -1,5 +1,6 @@
 package com.wutsi.application.feed.facebook
 
+import com.wutsi.application.feed.FbProduct
 import com.wutsi.checkout.manager.dto.Business
 import com.wutsi.marketplace.manager.dto.Offer
 import com.wutsi.membership.manager.dto.Member
@@ -27,7 +28,7 @@ class FbProductMapper(
             condition = "new",
             link = "$webappUrl${offer.product.url}",
             price = formatMoney(price, country),
-            salesPrice = salesPrice?.let { formatMoney(salesPrice, country) },
+            salePrice = salesPrice?.let { formatMoney(salesPrice, country) },
             brand = member.displayName,
             imageLink = offer.product.thumbnail?.url,
             additionalImageLink = offer.product.pictures
